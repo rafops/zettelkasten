@@ -68,11 +68,17 @@ _zk_edit() {
   [[ -n "${filename}" ]] || return 1
 
   escaped=$(echo "$@" | ruby -r 'shellwords' -e 'print Shellwords.shellescape ARGF.read.chop')
-  vim -c "silent! /${escaped}" "${ZK_HOME}/${filename}"
+  vim -c "silent! /${escaped}/i" "${ZK_HOME}/${filename}"
   _zk_commit_push "Updated" ${filename}
 
   # in case there is no updates to the file
   return 0
+}
+
+_zk_list_todo() {
+  _zk_cd_in
+  ag --color-match '1;31' --literal -i --nonumbers '[ ]'
+  _zk_cd_out
 }
 
 # ------------------------------------------------------------------------------
@@ -88,4 +94,6 @@ zkf() {
 }
 
 zkt() {
+  _zk_check_home || return 1
+  _zk_list_todo
 }

@@ -12,9 +12,9 @@ _zk_check_home() {
 _zk_find() {
   local filename
 
-  cd "${ZK_HOME}" && \
-    filename=$(echo "$@" | xargs -E '\n' -n1 ag -il | sort -u | fzf) && \
-    cd - >/dev/null
+  cd "${ZK_HOME}"
+  filename=$(echo "$@" | xargs -E '\n' -n1 ag -il | sort -u | fzf)
+  cd - >/dev/null
 
   echo "${filename}"
 }
@@ -45,9 +45,11 @@ _zk_new() {
 
 _zk_edit() {
   local filename=$(_zk_find "$@")
+  local escaped
+
   [[ -n "${filename}" ]] || return 1
 
-  local escaped=$(echo "$@" | ruby -r 'shellwords' -e 'print Shellwords.shellescape ARGF.read.chop')
+  escaped=$(echo "$@" | ruby -r 'shellwords' -e 'print Shellwords.shellescape ARGF.read.chop')
   vim -c "silent! /${escaped}" "${ZK_HOME}/${filename}"
   _zk_commit_push "Updated" ${filename}
 

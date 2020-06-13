@@ -20,12 +20,16 @@ _zk_find() {
 }
 
 _zk_commit_push() {
-  [[ -d "${ZK_HOME}/.git" ]] && \
-    cd "${ZK_HOME}" && \
-    git add . && \
-    git commit -v -a -m "${1}" >/dev/null && \
-    git push --set-upstream origin $(git_current_branch) >/dev/null && \
+  local message="${1}"
+  local filename="${2}"
+
+  if [[ -d "${ZK_HOME}/.git" ]] && [[ -f "${ZK_HOME}/${filename}" ]]; then
+    cd "${ZK_HOME}"
+    git add "${filename}" && \
+      git commit -v -a -m "${message}: ${filename}" >/dev/null && \
+      git push --set-upstream origin $(git_current_branch) >/dev/null
     cd - >/dev/null
+  fi
 }
 
 _zk_new() {
@@ -36,7 +40,7 @@ _zk_new() {
   local filename="${curdate}-${parameterized}.md"
 
   echo "# ${titleized}\n\n" | vim +3 - +"file ${ZK_HOME}/${filename}"
-  _zk_commit_push "Created ${filename}"
+  _zk_commit_push "Created" ${filename}
 }
 
 _zk_edit() {
@@ -45,7 +49,7 @@ _zk_edit() {
 
   local escaped=$(echo "$@" | ruby -r 'shellwords' -e 'print Shellwords.shellescape ARGF.read.chop')
   vim -c "silent! /${escaped}" "${ZK_HOME}/${filename}"
-  _zk_commit_push "Updated ${filename}"
+  _zk_commit_push "Updated" ${filename}
 
   # in case there is no updates to the file
   return 0

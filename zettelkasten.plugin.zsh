@@ -9,12 +9,20 @@ _zk_check_home() {
   fi
 }
 
+_zk_cd_in() {
+  cd "${ZK_HOME}"
+}
+
+_zk_cd_out() {
+  cd - >/dev/null
+}
+
 _zk_find() {
   local filename
 
-  cd "${ZK_HOME}"
-  filename=$(echo "$@" | xargs -E '\n' -n1 ag -il | sort -u | fzf)
-  cd - >/dev/null
+  _zk_cd_in
+  filename=$(echo "$@" | xargs -E '\n' -n1 ag -il | sort -ru | fzf -1)
+  _zk_cd_out
 
   echo "${filename}"
 }
@@ -24,20 +32,30 @@ _zk_commit_push() {
   local filename="${2}"
 
   if [[ -d "${ZK_HOME}/.git" ]] && [[ -f "${ZK_HOME}/${filename}" ]]; then
-    cd "${ZK_HOME}"
+    _zk_cd_in
     git add "${filename}" && \
       git commit -v -a -m "${message}: ${filename}" >/dev/null && \
       git push --set-upstream origin $(git_current_branch) >/dev/null
-    cd - >/dev/null
+    _zk_cd_out
   fi
 }
 
 _zk_new() {
   local curdate=$(date +%Y%m%d%H%M%S)
-  local formatted=$(echo "$@" | ruby -r 'active_support/all' -e 's=ARGF.read.chop ; print [:parameterize,:titleize].map { |m| s.send(m) }.join(" ")')
-  local parameterized=$(echo "${formatted}" | cut -d ' ' -f 1)
-  local titleized=$(echo "${formatted}" | cut -d ' ' -f 2-)
-  local filename="${curdate}-${parameterized}.md"
+  local filename="${curdate}.md"
+  local formatted
+  local parameterized
+  local titleized="${curdate}"
+
+  if [[ -n "$@" ]]; then
+    formatted=$(echo "$@" | ruby -r 'active_support/all' -e 's=ARGF.read.chop ; print [:parameterize,:titleize].map { |m| s.send(m) }.join(" ")')
+    parameterized=$(echo "${formatted}" | cut -d ' ' -f 1)
+    titleized=$(echo "${formatted}" | cut -d ' ' -f 2-)
+
+    if [[ -n "${parameterized}" ]]; then
+      filename="${curdate}-${parameterized}.md"
+    fi
+  fi
 
   echo "# ${titleized}\n\n" | vim +3 - +"file ${ZK_HOME}/${filename}"
   _zk_commit_push "Created" ${filename}

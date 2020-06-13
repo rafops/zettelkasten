@@ -22,5 +22,19 @@ plugins=(zettelkasten)
 Set `$ZK_HOME` directory in `~/.zshrc`:
 
 ```bash
-export ZK_HOME="${HOME}/Documents/Notes"
+export ZK_HOME="${HOME}/Documents"
+```
+
+## Usage
+
+To create a new document:
+
+```
+zk A new document
+```
+
+To find and edit existing documents:
+
+```
+zkf A document
 ```

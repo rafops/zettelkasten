@@ -13,7 +13,7 @@ _zk_find() {
   local filename
 
   cd "${ZK_HOME}"
-  filename=$(echo "$@" | xargs -E '\n' -n1 ag -il | sort -u | fzf)
+  filename=$(echo "$@" | xargs -E '\n' -n1 ag -il | sort -u | fzf --preview 'bat --color "always" {}')
   cd - >/dev/null
 
   echo "${filename}"
@@ -50,7 +50,7 @@ _zk_edit() {
   [[ -n "${filename}" ]] || return 1
 
   escaped=$(echo "$@" | ruby -r 'shellwords' -e 'print Shellwords.shellescape ARGF.read.chop')
-  vim -c "silent! /${escaped}" "${ZK_HOME}/${filename}"
+  vim -c "silent! /${escaped}/i" "${ZK_HOME}/${filename}"
   _zk_commit_push "Updated" ${filename}
 
   # in case there is no updates to the file
@@ -70,4 +70,7 @@ zkf() {
 }
 
 zkt() {
+  cd "${ZK_HOME}"
+  ag --nonumbers "\[ \]"
+  cd - >/dev/null
 }

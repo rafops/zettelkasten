@@ -94,8 +94,7 @@ _zk_edit() {
     options+=(-c "silent! /${escaped}/i")
   fi
 
-  ## SC2086: Double quote to prevent globbing and word splitting
-  # word splitting is intentional
+  # shellcheck disable=SC2086
   vim ${options[*]} "${ZK_HOME}/${filename}"
   _zk_commit_push "Updated" "${filename}"
 

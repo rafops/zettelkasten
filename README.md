@@ -3,11 +3,11 @@
 ## Dependencies
 
 - zsh, oh-my-zsh
-- bat, fzf, ag (silver searcher)
+- vim, git, bat, fzf, ag (silver searcher)
 - Docker
 
 ```bash
-brew install zsh bat fzf the_silver_searcher
+brew install zsh vim git bat fzf the_silver_searcher
 sh -c "$(curl -fsSL https://raw.github.com/ohmyzsh/ohmyzsh/master/tools/install.sh)"
 brew cask install docker
 ```

@@ -206,6 +206,7 @@ zk() {
     _zk_last_edit
     return 0
   fi
+
   # Create/edit document from search
   _zk_find_edit "$@" || _zk_new "$@"
 }

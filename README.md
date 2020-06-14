@@ -2,8 +2,10 @@
 
 ## Pre-requisites
 
-- Ruby with `activesupport` gem installed
-
+```bash
+brew install fzf the_silver_searcher
+brew cask install docker
+```
 
 ## Installation
 

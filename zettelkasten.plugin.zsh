@@ -9,34 +9,39 @@ _zk_check_home() {
   fi
 }
 
-_zk_cd_in() {
-  cd "${ZK_HOME}"
+_zk_ruby_update() {
+  cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1
+  git pull origin master
+  docker build --target zk-ruby --tag zk-ruby .
 }
 
-_zk_cd_out() {
-  cd - >/dev/null
+_zk_ruby() {
+  [[ -n "$(docker image ls -q zk-ruby)" ]] || _zk_ruby_update
+  docker run -i --rm -v "${ZK_HOME:-$(pwd)}:/root/workdir" -a stdin -a stdout zk-ruby "$@"
 }
 
 _zk_find() {
   local filename
-
-  _zk_cd_in
+  cd "${ZK_HOME}"
   filename=$(echo "$@" | xargs -E '\n' -n1 ag -il | sort -ru | fzf -1)
-  _zk_cd_out
-
+  cd - >/dev/null
   echo "${filename}"
 }
 
 _zk_commit_push() {
-  local message="${1}"
-  local filename="${2}"
+  local message="${1:-Updates}"
+  local filename="${2:-.}"
 
-  if [[ -d "${ZK_HOME}/.git" ]] && [[ -f "${ZK_HOME}/${filename}" ]]; then
-    _zk_cd_in
+  if [[ -d "${ZK_HOME}/.git" ]] && \
+     [[ -f "${ZK_HOME}/${filename}" ]] && \
+     [[ -n "$(which git)" ]]; then
+
+    cd "${ZK_HOME}"
     git add "${filename}" && \
       git commit -v -a -m "${message}: ${filename}" >/dev/null && \
       git push --set-upstream origin $(git_current_branch) >/dev/null
-    _zk_cd_out
+    cd - >/dev/null
+
   fi
 }
 
@@ -48,7 +53,7 @@ _zk_new() {
   local titleized="${curdate}"
 
   if [[ -n "$@" ]]; then
-    formatted=$(echo "$@" | ruby -r 'active_support/all' -e 's=ARGF.read.chop ; print [:parameterize,:titleize].map { |m| s.send(m) }.join(" ")')
+    formatted=$(echo "$@" | _zk_ruby -r 'active_support/all' -e 's=ARGF.read.chop ; print [:parameterize,:titleize].map { |m| s.send(m) }.join(" ")')
     parameterized=$(echo "${formatted}" | cut -d ' ' -f 1)
     titleized=$(echo "${formatted}" | cut -d ' ' -f 2-)
 
@@ -67,7 +72,7 @@ _zk_edit() {
 
   [[ -n "${filename}" ]] || return 1
 
-  escaped=$(echo "$@" | ruby -r 'shellwords' -e 'print Shellwords.shellescape ARGF.read.chop')
+  escaped=$(echo "$@" | _zk_ruby -r 'shellwords' -e 'print Shellwords.shellescape ARGF.read.chop')
   vim -c "silent! /${escaped}/i" "${ZK_HOME}/${filename}"
   _zk_commit_push "Updated" ${filename}
 
@@ -76,9 +81,9 @@ _zk_edit() {
 }
 
 _zk_list_todo() {
-  _zk_cd_in
+  cd "${ZK_HOME}"
   ag --color-match '1;31' --literal -i --nonumbers '[ ]'
-  _zk_cd_out
+  cd - >/dev/null
 }
 
 # ------------------------------------------------------------------------------

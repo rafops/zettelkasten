@@ -37,3 +37,7 @@ export ZK_HOME="${HOME}/Documents"
 ```
 zk -h
 ```
+
+## Zettlr
+
+This tool works better when paired with [Zettlr](https://www.zettlr.com)

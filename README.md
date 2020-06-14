@@ -1,9 +1,9 @@
 # Zettelkasten ZSH plugin
 
-## Pre-requisites
+## Dependencies
 
 ```bash
-brew install fzf the_silver_searcher
+brew install bat fzf the_silver_searcher
 brew cask install docker
 ```
 
@@ -21,7 +21,7 @@ Add plugin to your load list in `~/.zshrc`:
 plugins=(zettelkasten)
 ```
 
-Set `$ZK_HOME` directory in `~/.zshrc`:
+Set `$ZK_HOME` directory in `~/.zshrc` (default is ~/Documents):
 
 ```bash
 export ZK_HOME="${HOME}/Documents"
@@ -29,14 +29,6 @@ export ZK_HOME="${HOME}/Documents"
 
 ## Usage
 
-To create a new document:
-
 ```
-zk A new document
-```
-
-To find and edit existing documents:
-
-```
-zkf A document
+zk -h
 ```

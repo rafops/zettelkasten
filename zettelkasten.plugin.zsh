@@ -1,10 +1,11 @@
-_zk_check_home() {
+_zk_set_home() {
   if [[ -z "${ZK_HOME}" ]]; then
-    echo "\$ZK_HOME is not set" >/dev/stderr
-    return 1
+    echo "Warning: \$ZK_HOME is not set, using ${HOME}/Documents by default" >/dev/stderr
+    export ZK_HOME="${HOME}/Documents"
+    return 0
   fi
   if [[ ! -d "${ZK_HOME}" ]]; then
-    echo "\$ZK_HOME ${ZK_HOME} is not a directory" >/dev/stderr
+    echo "Error: \$ZK_HOME ${ZK_HOME} is not a directory" >/dev/stderr
     return 1
   fi
 }
@@ -23,7 +24,7 @@ _zk_ruby() {
 _zk_find() {
   local filename
   cd "${ZK_HOME}"
-  filename=$(echo "$@" | xargs -E '\n' -n1 ag -il | sort -ru | fzf -1)
+  filename=$(echo "$@" | xargs -E '\n' -n1 ag -il | sort -ru | fzf -1 --preview 'bat --style=numbers --color=always {}')
   cd - >/dev/null
   echo "${filename}"
 }
@@ -46,11 +47,12 @@ _zk_commit_push() {
 }
 
 _zk_new() {
-  local curdate=$(date +%Y%m%d%H%M%S)
+  local curtime=$(date +%s)
+  local curdate=$(date -u -r ${curtime} +"%Y%m%d%H%M%S") # UTC
   local filename="${curdate}.md"
   local formatted
   local parameterized
-  local titleized="${curdate}"
+  local titleized=$(date -r ${curtime} +"%Y-%m-%d %H:%M:%S %Z") # Current timezone
 
   if [[ -n "$@" ]]; then
     formatted=$(echo "$@" | _zk_ruby -r 'active_support/all' -e 's=ARGF.read.chop ; print [:parameterize,:titleize].map { |m| s.send(m) }.join(" ")')
@@ -82,23 +84,76 @@ _zk_edit() {
 
 _zk_list_todo() {
   cd "${ZK_HOME}"
-  ag --color-match '1;31' --literal -i --nonumbers '[ ]'
+  ag --color-match '1;31' -i --nonumbers '(\[\s\]|TODO)'
   cd - >/dev/null
+}
+
+_zk_help() {
+  echo "Usage:"
+  echo "  zk                 \tCreate a new document without a title"
+  echo "  zk <search>        \tCreate/edit a document from <search>"
+  echo "  zk -n 'A document' \tCreate a new document with title 'A Document'"
+  echo "  zk -f <query>      \tFind and edit an existing document containing <query>"
+  echo "  zk -t              \tShow TODO list from existing documents"
+  echo "  zk -h              \tShow this menu"
 }
 
 # ------------------------------------------------------------------------------
 
 zk() {
-  _zk_check_home || return 1
-  _zk_new "$@"
-}
+  local search
+  local _new=0
+  local edit=0
+  local todo=0
+  local help=0
 
-zkf() {
-  _zk_check_home || return 1
+  while getopts nfth option
+  do
+  case "${option}"
+  in
+  n) _new=1;;
+  f) edit=1;;
+  t) todo=1;;
+  h) help=1;;
+  esac
+  done
+
+  # Help
+  if [[ ${help} -eq 1 ]]; then
+    _zk_help
+    return 0
+  fi
+
+  # Set ZK_HOME or fail
+  _zk_set_home
+  [[ $? -eq 1 ]] && return 1
+
+  # Empty arguments -> New document
+  if [[ -z "$@" ]]; then
+    _zk_new
+    return 0
+  fi
+
+  # New with title
+  if [[ ${_new} -eq 1 ]]; then
+    shift
+    _zk_new "$@"
+    return 0
+  fi
+
+  # Find and edit from query
+  if [[ ${edit} -eq 1 ]]; then
+    shift
+    _zk_edit "$@"
+    return 0
+  fi
+
+  # Show TODO list
+  if [[ ${todo} -eq 1 ]]; then
+    _zk_list_todo
+    return 0
+  fi
+
+  # Create/edit document from search
   _zk_edit "$@" || _zk_new "$@"
-}
-
-zkt() {
-  _zk_check_home || return 1
-  _zk_list_todo
 }

@@ -115,6 +115,14 @@ _zk_find_edit() {
   return 0
 }
 
+_zk_today() {
+  local curtime
+  curtime=$(date +%s)
+  local today
+  today=$(date -r "${curtime}" +"%Y-%m-%d")
+  _zk_find_edit "${today}" || _zk_new
+}
+
 _zk_last_edit() {
   local filename
 
@@ -174,9 +182,9 @@ zk() {
   _zk_set_home
   [[ $? -eq 1 ]] && return 1
 
-  # Empty arguments -> New document
+  # Empty arguments -> Today's document
   if [[ -z "$*" ]]; then
-    _zk_new
+    _zk_today
     return 0
   fi
 
